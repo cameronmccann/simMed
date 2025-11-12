@@ -16,4 +16,5 @@ devtools::check()
 # Last check
 devtools::check()
 
-
+#
+devtools::install()
