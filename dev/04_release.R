@@ -8,8 +8,12 @@ devtools::document()
 # testthat::test()
 devtools::check()
 
-
 # optional:
 # usethis::use_news_md()
 # usethis::use_version("minor")  # or "patch"/"major"
 # devtools::build()
+
+# Last check
+devtools::check()
+
+

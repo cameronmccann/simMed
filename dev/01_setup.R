@@ -48,7 +48,8 @@ usethis::use_test("generate_clusters")
 ##    automatically go to that functions corresponding test file; no need
 ##    for writing the function/file name
 
-
+# Update readme
+devtools::build_readme()
 
 # optional DESCRIPTION fields, authorship, etc.
 # usethis::use_author("Cameron McCann", "cameron@…")
