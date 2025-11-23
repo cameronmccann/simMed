@@ -7,33 +7,23 @@
 
 <!-- badges: end -->
 
-The goal of simMed is to …
+The goal of `simMed` is to provide tools for generating clustered
+(multilevel) datasets for causal mediation analysis. The package
+currently includes a single function, `generate_data()`, that simulates
+clustered data with individuals nested within clusters. Each simulated
+dataset includes an individual-level treatment (`A`), mediator (`M`),
+outcome (`Y`), pretreatment covariates (`X`), and a cluster-level
+confounder (`Z`). The function supports both binary and continuous
+mediator/outcome and provides the true potential outcomes.
 
 ## Installation
 
-You can install the development version of simMed from
-[GitHub](https://github.com/) with:
+To install the latest development version from
+[GitHub](https://github.com/), type:
 
 ``` r
 # install.packages("devtools")
 devtools::install_github("cameronmccann/simMed")
 ```
 
-## Example
-
-This is a basic example which shows you how to solve a common problem:
-
-``` r
-# library(simMed)
-## basic example code
-```
-
-What is special about using `README.Rmd` instead of just `README.md`?
-You can include R chunks like so:
-
-``` r
-# summary(cars)
-```
-
-You’ll still need to render `README.Rmd` regularly, to keep `README.md`
-up-to-date. `devtools::build_readme()` is handy for this.
+<!-- You'll still need to render `README.Rmd` regularly, to keep `README.md` up-to-date. `devtools::build_readme()` is handy for this. -->
