@@ -1,39 +1,35 @@
 #' @title generate_data_noMed
 #'
+#' @description
+#' Generates a clustered dataset with an individual-level treatment (\code{A}),
+#' an outcome (\code{Y}), individual-level covariates (\code{X}), and a
+#' cluster-level variable (\code{Z}). A simplified version of \code{generate_data()}
+#' with no mediator. Supports both binary and continuous outcomes and computes
+#' the true total treatment effect (TTE) if requested.
+#'
 # [NEED TO ADD INFO] [THROUGH EVERYTHING INTO AI TO UPDATE AND MATCH UPDATED FUNCTION - 2026-02-19]
+#'
 #'
 #' @param J Integer. Number of clusters (default: 100).
 #' @param njrange Integer vector of length 2. Range (min, max) for cluster sizes (default: \code{c(50, 100)}).
-#' @param Mfamily Character. Family for the mediator (\code{"gaussian"} or \code{"binomial"}). Defaults to \code{"binomial"}.
 #' @param Yfamily Character. Family for the outcome (\code{"gaussian"} or \code{"binomial"}). Defaults to \code{"binomial"}.
 #' @param if.null Logical. If \code{TRUE}, generate data under the null hypothesis (i.e., no effects). Defaults to \code{FALSE}.
 #' @param seed Integer. Random seed for reproducibility (default: 123456).
 #' @param num_x Integer. Number of individual-level covariates (\code{X}). Defaults to 3.
-#' @param a_on_x description.......
-#' @param a_on_z description.......
+#' @param a_on_x Numeric. Effect of \code{X} on treatment \code{A}. Defaults to \code{sqrt(0.05625 / 3)}.
+#' @param a_on_z Numeric. Effect of \code{Z} on treatment \code{A}. Defaults to \code{sqrt(0.15 / 1)}.
 #' @param x_z Numeric. Correlation between \code{X} and the cluster-level variable \code{Z} (default: 0).
-#' @param m_on_a Numeric. Main effect of treatment \code{A} on mediator \code{M} (default: 0.2).
-#' @param m_on_az Numeric. Interaction effect of \code{A} and \code{Z} on \code{M} (default: 0.2).
-#' @param m_on_anj Numeric. Interaction effect of \code{A} and cluster size (\code{nj}) on \code{M} (default: 0.2).
-#' @param m_on_x Numeric. Effect of each individual-level covariate \code{X} on \code{M}.
-#'   Defaults to \code{sqrt(0.15 / num_x)}.
-#' @param m_on_z Numeric. Effect of cluster-level variable \code{Z} on \code{M}. Defaults to \code{sqrt(0.4)}.
 #' @param yintercept Numeric. Intercept in the outcome \code{Y} model (default: 1).
 #' @param y_on_a Numeric. Main effect of \code{A} on \code{Y} (default: 0.5).
-#' @param y_on_m Numeric. Main effect of \code{M} on \code{Y} (default: 1).
-#' @param y_on_am Numeric. Interaction effect of \code{A} and \code{M} on \code{Y} (default: 0).
 #' @param y_on_az Numeric. Interaction effect of \code{A} and \code{Z} on \code{Y} (default: 0.2).
-#' @param y_on_mz Numeric. Interaction effect of \code{M} and \code{Z} on \code{Y} (default: 0.2).
 #' @param y_on_anj Numeric. Interaction effect of \code{A} and cluster size (\code{nj}) on \code{Y} (default: 0.2).
 #' @param y_on_x Numeric. Effect of each individual-level covariate \code{X} on \code{Y}.
 #'   Defaults to \code{sqrt(0.15 / num_x)}.
 #' @param y_on_z Numeric. Effect of \code{Z} on \code{Y}. Defaults to \code{sqrt(0.4)}.
 #' @param quadratic.A Logical. If \code{TRUE}, include quadratic term for \code{A} in the mediator/outcome models (default: FALSE).
-#' @param quadratic.M Logical. If \code{TRUE}, include quadratic term for \code{M} in the outcome model (default: FALSE).
 #' @param quadratic.Y Logical. If \code{TRUE}, include quadratic term for \code{Y} itself (used in some advanced simulations) (default: FALSE).
 #' @param iccx Numeric. Intra-class correlation for the \code{X} variables (default: 0.2).
 #' @param icca Numeric. Intra-class correlation for treatment \code{A} (default: 0.2).
-#' @param iccm Numeric. Intra-class correlation for mediator \code{M} (default: 0.2).
 #' @param iccy Numeric. Intra-class correlation for outcome \code{Y} (default: 0.2).
 #' @param include_truevals Logical. If \code{TRUE}, call \code{trueVals2.0d()} to compute the true potential outcomes and
 #'   mediation effects (default: TRUE).
@@ -45,54 +41,47 @@
 #'
 #' @return A list containing:
 #' \describe{
-#'   \item{\code{data}}{A data frame containing the simulated data:
-#'                      \code{A} (treatment), \code{M} (mediator), \code{Y} (outcome),
-#'                      \code{Z} (cluster-level var), \code{X} (individual-level covariates),
-#'                      \code{school} (cluster ID), etc.}
-#'   \item{\code{truevals}}{(Optional) A list of the true potential outcomes under different
-#'                          \code{(A, M)} interventions if \code{include_truevals = TRUE}.}
-#'   \item{\code{effects}}{A list of mediation effects (PNDE, PNIE, TNDE, TNIE) at both individual and cluster levels,
-#'                         if \code{include_truevals = TRUE}. Otherwise, this may be \code{NULL}.}
+#'   \item{\code{data}}{A data frame containing the simulated data: \code{A} (treatment), \code{Y} (outcome),
+#'                      \code{Z} (cluster-level var), \code{X1},...,\code{Xp} (individual-level covariates),
+#'                      \code{school} (cluster ID), \code{W_nj} (standardized cluster size),
+#'                      \code{ps_true} (true propensity score), \code{iptw_true} (IPTW weights).}
+#'   \item{\code{truevals}}{A list from \code{trueVals_noMed()} containing the true total treatment
+#'   effect at the individual and cluster levels. \code{NULL} if \code{include_truevals = FALSE}.}
 #'   \item{\code{overlap}}{A list containing diagnostic plots and summary for propensity scores (\code{ps_true})
 #'                         and stabilized IPTW (\code{iptw_true}). Useful for checking overlap/outliers.}
-#'   \item{\code{parameters}}{A list of the input parameters and additional generated values (like \code{nj_sizes})
-#'                            for documentation and reproducibility.}
+#'   \item{\code{parameters}}{A list of the input parameters and additional generated quantities
+#'   (e.g., \code{nj_sizes}, \code{y_given}, \code{clust_trt_prop}).}
 #' }
 #'
+#'
 #' @details
-#' This function is a wrapper that calls several helper functions:
+#' This function is a wrapper that calls:
 #' \itemize{
 #'   \item \code{generate_clusters()}: Builds the cluster IDs and sets cluster sizes in \code{njrange}.
 #'   \item \code{generate_confounders()}: Creates individual-level confounders \code{X} (optionally correlated with \code{Z}).
 #'   \item \code{generate_treatment()}: Simulates the binary (or continuous) treatment \code{A} with optional ICC.
-#'   \item \code{generate_mediator()}: Simulates \code{M} given \code{A}, \code{Z}, cluster size, etc.,
-#'                                     using the family (\code{binomial} or \code{gaussian}).
 #'   \item \code{generate_outcome()}: Constructs outcome \code{Y} based on \code{A}, \code{M}, \code{Z},
 #'                                    interactions, ICC, etc., again depending on the family chosen.
-#'   \item \code{trueVals2.0d()}: (Optional) Computes the true potential outcomes for \code{Y(a0, gm(a1))},
-#'                                cluster-level means, and resulting mediation effects.
+#'   \item \code{trueVals_noMed()}: if \code{include_truevals = TRUE}.
 #' }
+#' Note: No mediator is generated; all mediator-related coefficients are fixed to 0 internally when calling
+#' \code{generate_outcome()}.
 #'
-#' Propensity score (\code{ps_true}) and IPTW weights (\code{iptw_true}) are also computed for
-#' reference and diagnostic plotting.
 #'
 #' @examples
-#' # Generate data with smaller clusters and continuous M, continuous Y:
 #' result <- generate_data_noMed(
 #'   J = 50,
 #'   njrange = c(10, 20),
 #'   Yfamily = "gaussian"
 #' )
-#' str(result$data)  # Inspect the generated data
+#' str(result$data)
 #'
 #' @import dplyr
-#' @importFrom glue glue
 #' @import ggplot2
 #' @importFrom purrr map
 #' @importFrom stats var quantile qlogis pnorm rnorm
 #'
 #' @export
-
 generate_data_noMed <- function(J = 100,                        # Number of clusters
                           njrange = c(50, 100),            # Range for cluster sizes
                           # Mfamily = "binomial",            # Family for mediator ('gaussian' or 'binomial')
@@ -302,38 +291,38 @@ generate_data_noMed <- function(J = 100,                        # Number of clus
     true_tte <- trueVals_noMed(data_list = data_list, Yfamily = Yfamily)
   }
 
-  # 8. Calculate mediation effects (if true values available) ---------------
-
-  # Extract the relevant potential outcomes from true_vals
-  if (!is.null(true_tte)) {
-    # Individual-level potential outcomes
-    y_a0_m0 <- true_vals$truevals_individual$`Y(a0=0, gm(a1=0))`
-    y_a1_m0 <- true_vals$truevals_individual$`Y(a0=1, gm(a1=0))`
-    y_a0_m1 <- true_vals$truevals_individual$`Y(a0=0, gm(a1=1))`
-    y_a1_m1 <- true_vals$truevals_individual$`Y(a0=1, gm(a1=1))`
-
-    # Compute individual-level mediation effects
-    pnde_ind <- y_a1_m0 - y_a0_m0  # Pure Natural Direct Effect
-    pnie_ind <- y_a0_m1 - y_a0_m0  # Pure Natural Indirect Effect
-    tnde_ind <- y_a1_m1 - y_a0_m1  # Total Natural Direct Effect
-    tnie_ind <- y_a1_m1 - y_a1_m0  # Total Natural Indirect Effect
-
-    # Cluster-level potential outcomes
-    y_cl_a0_m0 <- true_vals$truevals_cluster$`Y(a0=0, gm(a1=0))`
-    y_cl_a1_m0 <- true_vals$truevals_cluster$`Y(a0=1, gm(a1=0))`
-    y_cl_a0_m1 <- true_vals$truevals_cluster$`Y(a0=0, gm(a1=1))`
-    y_cl_a1_m1 <- true_vals$truevals_cluster$`Y(a0=1, gm(a1=1))`
-
-    # Compute cluster-level mediation effects
-    pnde_cluster <- y_cl_a1_m0 - y_cl_a0_m0
-    pnie_cluster <- y_cl_a0_m1 - y_cl_a0_m0
-    tnde_cluster <- y_cl_a1_m1 - y_cl_a0_m1
-    tnie_cluster <- y_cl_a1_m1 - y_cl_a1_m0
-  } else {
-    # If we didn't compute trueVals2.0d, set effects to NULL
-    pnde_ind <- pnie_ind <- tnde_ind <- tnie_ind <- NULL
-    pnde_cluster <- pnie_cluster <- tnde_cluster <- tnie_cluster <- NULL
-  }
+  # # 8. Calculate mediation effects (if true values available) ---------------
+  #
+  # # Extract the relevant potential outcomes from true_vals
+  # if (!is.null(true_tte)) {
+  #   # Individual-level potential outcomes
+  #   y_a0_m0 <- true_vals$truevals_individual$`Y(a0=0, gm(a1=0))`
+  #   y_a1_m0 <- true_vals$truevals_individual$`Y(a0=1, gm(a1=0))`
+  #   y_a0_m1 <- true_vals$truevals_individual$`Y(a0=0, gm(a1=1))`
+  #   y_a1_m1 <- true_vals$truevals_individual$`Y(a0=1, gm(a1=1))`
+  #
+  #   # Compute individual-level mediation effects
+  #   pnde_ind <- y_a1_m0 - y_a0_m0  # Pure Natural Direct Effect
+  #   pnie_ind <- y_a0_m1 - y_a0_m0  # Pure Natural Indirect Effect
+  #   tnde_ind <- y_a1_m1 - y_a0_m1  # Total Natural Direct Effect
+  #   tnie_ind <- y_a1_m1 - y_a1_m0  # Total Natural Indirect Effect
+  #
+  #   # Cluster-level potential outcomes
+  #   y_cl_a0_m0 <- true_vals$truevals_cluster$`Y(a0=0, gm(a1=0))`
+  #   y_cl_a1_m0 <- true_vals$truevals_cluster$`Y(a0=1, gm(a1=0))`
+  #   y_cl_a0_m1 <- true_vals$truevals_cluster$`Y(a0=0, gm(a1=1))`
+  #   y_cl_a1_m1 <- true_vals$truevals_cluster$`Y(a0=1, gm(a1=1))`
+  #
+  #   # Compute cluster-level mediation effects
+  #   pnde_cluster <- y_cl_a1_m0 - y_cl_a0_m0
+  #   pnie_cluster <- y_cl_a0_m1 - y_cl_a0_m0
+  #   tnde_cluster <- y_cl_a1_m1 - y_cl_a0_m1
+  #   tnie_cluster <- y_cl_a1_m1 - y_cl_a1_m0
+  # } else {
+  #   # If we didn't compute trueVals2.0d, set effects to NULL
+  #   pnde_ind <- pnie_ind <- tnde_ind <- tnie_ind <- NULL
+  #   pnde_cluster <- pnie_cluster <- tnde_cluster <- tnie_cluster <- NULL
+  # }
 
   # 9. Post-processing: separate out X columns if needed --------------------
   datobs <- data_list$data
