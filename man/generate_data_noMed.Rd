@@ -106,8 +106,6 @@ an outcome (\code{Y}), individual-level covariates (\code{X}), and a
 cluster-level variable (\code{Z}). A simplified version of \code{generate_data()}
 with no mediator. Supports both binary and continuous outcomes and computes
 the true total treatment effect (TTE) if requested.
-
-NEED TO ADD INFO THROUGH EVERYTHING INTO AI TO UPDATE AND MATCH UPDATED FUNCTION - 2026-02-19
 }
 \details{
 This function is a wrapper that calls:
