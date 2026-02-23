@@ -35,7 +35,6 @@ devtools::load_all()   # load the pkg like it's installed
 # Keep these cheap & remove once covered by formal tests.
 
 
-
 # Informal tests ----------------------------------------------------------
 
 # Format of output
