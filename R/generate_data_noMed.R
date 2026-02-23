@@ -7,7 +7,7 @@
 #' with no mediator. Supports both binary and continuous outcomes and computes
 #' the true total treatment effect (TTE) if requested.
 #'
-# [NEED TO ADD INFO] [THROUGH EVERYTHING INTO AI TO UPDATE AND MATCH UPDATED FUNCTION - 2026-02-19]
+#' NEED TO ADD INFO THROUGH EVERYTHING INTO AI TO UPDATE AND MATCH UPDATED FUNCTION - 2026-02-19
 #'
 #'
 #' @param J Integer. Number of clusters (default: 100).
