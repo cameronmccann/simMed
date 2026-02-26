@@ -1,50 +1,47 @@
 #' @title generate_clusters
 #'
-#' @description Brief description of what the function does.
+#' @description Generate J cluster sizes in a range and return the individual-level data and metadata.
 #'
-#' @param J Integer. Number of clusters (default: 100).
-#' @param njrange Integer vector of length 2. Range (min, max) for cluster sizes (default: \code{c(50, 100)}).
-#' @param seed Integer. Random seed for reproducibility (default: 123456).
+#' @param J integer. Number of clusters. Default 100.
+#' @param njrange numeric length 2. Min and max cluster size (inclusive-ish). Default c(50, 100).
+#' @param seed optional integer. If provided, used to seed RNG.
 #'
-#' @return Description of the output value or object the function returns.
-#'
-#' @details Additional details about the function, such as implementation notes or edge cases.
-#'
-#' @importFrom rlang .data
-#'
-generate_clusters <- function(J = 100, njrange = c(50, 100), seed =1234) {
-    # library(tidyverse)
+#' @return A list with elements: data (data.frame), nj_sizes, njrange, J, N, seed.
 
-    # set seed
-    set.seed(seed)
+generate_clusters <- function(J = 100, njrange = c(50, 100), seed = NULL) {
+  if (!is.null(seed)) set.seed(seed)
 
-    # Generate random cluster sizes within the specified range
-    nj_sizes <- stats::runif(J, njrange[1], njrange[2]) |> round()
-
-    # Total number of individuals
-    N <- sum(nj_sizes)
-
-    # Create the initial data frame with individual IDs and cluster IDs
-    data <- data.frame(id = 1:N,
-                       school = unlist(purrr::map(1:J, ~ rep(.x, each = nj_sizes[.x])))) |>
-      dplyr::group_by(.data$school) |>
-      # Create a standardized cluster size variable 'W_nj'
-      dplyr::mutate(
-        W_nj = dplyr::if_else(
-          njrange[1] == njrange[2],
-          0,
-          (dplyr::n() - njrange[1]) / (njrange[2] - njrange[1])
-        )
-      ) |> # NOTE: maybe reconsider
-      dplyr::ungroup()
-
+  # guardrails
+  stopifnot(length(njrange) == 2, is.numeric(njrange), J >= 0)
+  if (J == 0) {
     return(list(
-        data = data,
-        nj_sizes = nj_sizes,
-        njrange = njrange,
-        J = J,
-        N = N,
-        seed = seed
+      data = data.frame(id = integer(0), school = integer(0), W_nj = numeric(0)),
+      nj_sizes = integer(0), njrange = njrange, J = 0, N = 0, seed = seed
     ))
-}
+  }
 
+  nj_sizes <- round(stats::runif(J, njrange[1], njrange[2]))
+  N <- sum(nj_sizes)
+
+  # vector of cluster ids of length N, e.g. 1,1,...(nj_sizes[1] times), 2,2,..., etc.
+  school <- rep.int(seq_len(J), times = nj_sizes)
+
+  # W_nj is standardized cluster size attached to each row by its school
+  denom <- njrange[2] - njrange[1]
+  W_nj <- if (denom == 0) rep(0, N) else (nj_sizes[school] - njrange[1]) / denom
+
+  data <- data.frame(
+    id = seq_len(N),
+    school = school,
+    W_nj = W_nj
+  )
+
+  list(
+    data = data,
+    nj_sizes = nj_sizes,
+    njrange = njrange,
+    J = J,
+    N = N,
+    seed = seed
+  )
+}
