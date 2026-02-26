@@ -27,7 +27,8 @@ baseR_generate_clusters <- function(J = 100, njrange = c(50, 100), seed = NULL) 
   school <- rep.int(seq_len(J), times = nj_sizes)
 
   # W_nj is standardized cluster size attached to each row by its school
-  W_nj <- (nj_sizes[school] - njrange[1]) / (njrange[2] - njrange[1])
+  denom <- njrange[2] - njrange[1]
+  W_nj <- if (denom == 0) rep(0, N) else (nj_sizes[school] - njrange[1]) / denom
 
   data <- data.frame(
     id = seq_len(N),

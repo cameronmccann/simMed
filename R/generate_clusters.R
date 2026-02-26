@@ -27,9 +27,15 @@ generate_clusters <- function(J = 100, njrange = c(50, 100), seed =1234) {
     # Create the initial data frame with individual IDs and cluster IDs
     data <- data.frame(id = 1:N,
                        school = unlist(purrr::map(1:J, ~ rep(.x, each = nj_sizes[.x])))) |>
-        dplyr::group_by(.data$school) |>
-        # Create a standardized cluster size variable 'W_nj'
-      dplyr::mutate(W_nj = (dplyr::n() - njrange[1]) / (njrange[2] - njrange[1])) |> # NOTE: maybe reconsider
+      dplyr::group_by(.data$school) |>
+      # Create a standardized cluster size variable 'W_nj'
+      dplyr::mutate(
+        W_nj = dplyr::if_else(
+          njrange[1] == njrange[2],
+          0,
+          (dplyr::n() - njrange[1]) / (njrange[2] - njrange[1])
+        )
+      ) |> # NOTE: maybe reconsider
       dplyr::ungroup()
 
     return(list(
